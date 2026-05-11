@@ -186,7 +186,7 @@ class ModelWrapper():
             # every once in a while evaluate the loss on train and val sets
             if not self.config['skip_loss_eval_during_training'] and (i % self.config['eval_interval'] == 0 or i == self.config['max_iters'] - 1):
                 losses = self.estimate_loss()
-                tqdm.write(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+                tqdm.write(f"step {i}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
             # sample a batch of data
             xb, yb = self.batch('train', self.config['batch_size'], self.config['block_size'])
