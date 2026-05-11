@@ -93,7 +93,7 @@ class BasicLanguageModel(nn.Module):
         self.blocks = nn.Sequential(
             *[TransformerBlock(block_size, embedding_dim, num_heads) for _ in range(num_layers)])
         self.norm_final = LayerNorm(embedding_dim)
-        self.output = nn.Linear(embedding_dim, n_vocab)
+        self.output = nn.Linear(embedding_dim, n_vocab, bias=False)
         self.output.weight = self.token_embedding_table.weight
 
     def forward(self, input_ids, targets=None):
