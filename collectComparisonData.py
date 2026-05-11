@@ -30,14 +30,14 @@ results = []
 
 for framework, ModelWrapper in {'pytorch': MPS_LM, 'mlx': MLX_LM}.items():
     for i, seed in enumerate([212,829,943,486]):
-        print(f"Starting run {i} for {framework}\nApproximate Start Time is {time.perf_counter()}")
+        print(f"Starting run {i} for {framework}\nApproximate Start Time is {time.asctime()}")
         start_time = time.perf_counter()
 
         model = ModelWrapper(config,text,rand_seed=seed,np_rand_seed=seed)
         model.train()
 
         end_time = time.perf_counter()
-        print(f"End Time is {end_time}")
+        print(f"End Time is {time.asctime()}")
 
         total_time = end_time-start_time
 
