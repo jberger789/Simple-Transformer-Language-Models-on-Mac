@@ -29,13 +29,16 @@ tokens_per_run = config['max_iters'] * config['batch_size'] * config['block_size
 results = []
 
 for framework, ModelWrapper in {'pytorch': MPS_LM, 'mlx': MLX_LM}.items():
-    for seed in [212,829,943,486]:
+    for i, seed in enumerate([212,829,943,486]):
+        print(f"Starting run {i} for {framework}\nApproximate Start Time is {time.perf_counter()}")
         start_time = time.perf_counter()
 
         model = ModelWrapper(config,text,rand_seed=seed,np_rand_seed=seed)
         model.train()
 
         end_time = time.perf_counter()
+        print(f"End Time is {end_time}")
+
         total_time = end_time-start_time
 
         final_loss = model.estimate_loss()
