@@ -128,7 +128,10 @@ class BasicLanguageModel(nn.Module):
 
 class ModelWrapper():
     
-    def __init__(self, config, text):
+    def __init__(self, config, text, rand_seed = None, np_rand_seed=None):
+        torch.manual_seed(rand_seed)
+        np.random.seed(np_rand_seed)
+
         self.config = config
 
         data = torch.from_numpy(np.array(self.config['tokenizer'].encode(text), dtype=np.int32))
@@ -153,7 +156,8 @@ class ModelWrapper():
             data = self.trainset
         elif split == 'val':
             data = self.valset
-        inds = torch.randint(len(data) - block_size, (batch_size,))
+        # inds = torch.randint(len(data) - block_size, (batch_size,))
+        inds = np.random.randint(len(data) - block_size, size=batch_size)
         x = torch.stack([data[i:i+block_size] for i in inds])
         y = torch.stack([data[i+1:i+block_size+1] for i in inds])
         x,y = x.to(device), y.to(device)

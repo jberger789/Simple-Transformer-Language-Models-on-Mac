@@ -129,7 +129,10 @@ class BasicLanguageModel(nn.Module):
 
 class ModelWrapper():
     
-    def __init__(self, config, text):
+    def __init__(self, config, text, rand_seed = None, np_rand_seed=None):
+        mx.random.seed(rand_seed)
+        np.random.seed(np_rand_seed)
+
         self.config = config
 
         data = mx.array(np.array(self.config['tokenizer'].encode(text), dtype=np.int32))
@@ -163,7 +166,7 @@ class ModelWrapper():
         out = {}
         for split in ['train', 'val']:
             total = 0.0
-            for _ in range(self.config['eval_iters']):
+            for _ in tqdm(range(self.config['eval_iters']), leave=False, desc='Estimating loss'):
                 X, Y = self.batch(split, self.config['batch_size'], self.config['block_size'])
                 _, loss = self.model(X, Y)
                 mx.eval(loss)
