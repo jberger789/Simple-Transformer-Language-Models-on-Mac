@@ -6,7 +6,8 @@ import mlx.optimizers as optim
 from mlx.utils import tree_flatten
 from mlx.core import einsum
 from einops import rearrange
-from tqdm import tqdm
+# from tqdm import tqdm
+from tqdm.auto import tqdm
 # from tqdm.notebook import tqdm
 import tiktoken
 import numpy as np
@@ -130,7 +131,8 @@ class BasicLanguageModel(nn.Module):
 class ModelWrapper():
     
     def __init__(self, config, text, rand_seed = None, np_rand_seed=None):
-        mx.random.seed(rand_seed)
+        if rand_seed is not None:
+            mx.random.seed(rand_seed)
         np.random.seed(np_rand_seed)
 
         self.config = config
@@ -156,6 +158,7 @@ class ModelWrapper():
             data = self.trainset
         elif split == 'val':
             data = self.valset
+        # Using np.random allows for consistency between frameworks
         inds = np.random.randint(len(data) - block_size, size=batch_size)
         x = mx.stack([data[i:i+block_size] for i in inds])
         y = mx.stack([data[i+1:i+block_size+1] for i in inds])
@@ -166,7 +169,7 @@ class ModelWrapper():
         out = {}
         for split in ['train', 'val']:
             total = 0.0
-            for _ in tqdm(range(self.config['eval_iters']), leave=False, desc='Estimating loss'):
+            for _ in tqdm(range(self.config['eval_iters']), leave=False, desc=f'Estimating {split} loss'):
                 X, Y = self.batch(split, self.config['batch_size'], self.config['block_size'])
                 _, loss = self.model(X, Y)
                 mx.eval(loss)
@@ -185,10 +188,10 @@ class ModelWrapper():
             bias_correction=True,
         )
 
-        for it in tqdm(range(self.config['max_iters'])):
-            if it % self.config['eval_interval'] == 0 or it == self.config['max_iters'] - 1:
+        for i in tqdm(range(self.config['max_iters'])):
+            if not self.config['skip_loss_eval_during_training'] and (i % self.config['eval_interval'] == 0 or i == self.config['max_iters'] - 1):
                 losses = self.estimate_loss()
-                tqdm.write(f"step {it}: train {losses['train']:.4f}, val {losses['val']:.4f}")
+                tqdm.write(f"step {i}: train {losses['train']:.4f}, val {losses['val']:.4f}")
 
             xb, yb = self.batch('train', self.config['batch_size'], self.config['block_size'])
             loss, grads = loss_and_grad(self.model, xb, yb)

@@ -4,12 +4,13 @@ from einops import rearrange
 from torch import einsum
 import torch.nn as nn
 import torch.nn.functional as F
+from tqdm.auto import tqdm
+# from tqdm.notebook import tqdm
 # from tqdm import tqdm
-from tqdm import tqdm
 import tiktoken
 import numpy as np
 
-#Global Parameters
+#Set device global parameter
 device = 'mps' if torch.mps.is_available() else 'cpu'
 
 class MultiHeadAttention(nn.Module):
@@ -129,7 +130,8 @@ class BasicLanguageModel(nn.Module):
 class ModelWrapper():
     
     def __init__(self, config, text, rand_seed = None, np_rand_seed=None):
-        torch.manual_seed(rand_seed)
+        if rand_seed is not None:
+            torch.manual_seed(rand_seed)
         np.random.seed(np_rand_seed)
 
         self.config = config
@@ -156,7 +158,7 @@ class ModelWrapper():
             data = self.trainset
         elif split == 'val':
             data = self.valset
-        # inds = torch.randint(len(data) - block_size, (batch_size,))
+        # Using np.random allows for consistency between frameworks
         inds = np.random.randint(len(data) - block_size, size=batch_size)
         x = torch.stack([data[i:i+block_size] for i in inds])
         y = torch.stack([data[i+1:i+block_size+1] for i in inds])
@@ -169,7 +171,7 @@ class ModelWrapper():
         self.model.eval()
         for split in ['train', 'val']:
             losses = torch.zeros(self.config['eval_iters'])
-            for k in tqdm(range(self.config['eval_iters']),leave=False, desc='Estimating loss'):
+            for _ in tqdm(range(self.config['eval_iters']), leave=False, desc=f'Estimating {split} loss'):
                 X, Y = self.batch(split, self.config['batch_size'], self.config['block_size'])
                 logits, loss = self.model(X, Y)
                 losses[k] = loss.item()
@@ -180,9 +182,9 @@ class ModelWrapper():
     def train(self):
         optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.config['learning_rate'])
 
-        for iter in tqdm(range(self.config['max_iters'])):
+        for i in tqdm(range(self.config['max_iters'])):
             # every once in a while evaluate the loss on train and val sets
-            if iter % self.config['eval_interval'] == 0 or iter == self.config['max_iters'] - 1:
+            if not self.config['skip_loss_eval_during_training'] and (i % self.config['eval_interval'] == 0 or i == self.config['max_iters'] - 1):
                 losses = self.estimate_loss()
                 tqdm.write(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
