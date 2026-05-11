@@ -171,10 +171,10 @@ class ModelWrapper():
         self.model.eval()
         for split in ['train', 'val']:
             losses = torch.zeros(self.config['eval_iters'])
-            for _ in tqdm(range(self.config['eval_iters']), leave=False, desc=f'Estimating {split} loss'):
+            for i in tqdm(range(self.config['eval_iters']), leave=False, desc=f'Estimating {split} loss'):
                 X, Y = self.batch(split, self.config['batch_size'], self.config['block_size'])
                 logits, loss = self.model(X, Y)
-                losses[k] = loss.item()
+                losses[i] = loss.item()
             out[split] = losses.mean()
         self.model.train()
         return out

@@ -169,7 +169,7 @@ class ModelWrapper():
         out = {}
         for split in ['train', 'val']:
             total = 0.0
-            for _ in tqdm(range(self.config['eval_iters']), leave=False, desc=f'Estimating {split} loss'):
+            for i in tqdm(range(self.config['eval_iters']), leave=False, desc=f'Estimating {split} loss'):
                 X, Y = self.batch(split, self.config['batch_size'], self.config['block_size'])
                 _, loss = self.model(X, Y)
                 mx.eval(loss)
