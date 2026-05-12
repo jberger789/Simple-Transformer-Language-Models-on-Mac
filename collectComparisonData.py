@@ -31,25 +31,31 @@ results = []
 for framework, ModelWrapper in {'pytorch': MPS_LM, 'mlx': MLX_LM}.items():
     for i, seed in enumerate([212,829,943,486]):
         print(f"Starting run {i} for {framework}\nApproximate Start Time is {time.asctime()}")
-        start_time = time.perf_counter()
+        start_train_time = time.perf_counter()
 
         model = ModelWrapper(config,text,rand_seed=seed,np_rand_seed=seed)
         model.train()
 
-        end_time = time.perf_counter()
+        end_train_time = time.perf_counter()
         print(f"End Time is {time.asctime()}")
 
-        total_time = end_time-start_time
+        total_train_time = end_train_time-start_train_time
 
         final_loss = model.estimate_loss()
+
+        start_inference_time = time.perf_counter()
+        model.generate_text(max_new_tokens=5000)
+        end_inference_time = time.perf_counter()
+        total_inference_times = end_inference_time - start_inference_time
 
         results.append({
             'framework': framework,
             'seed': seed,
-            'run_time': total_time,
-            'tokens_per_sec': tokens_per_run / total_time,
+            'training_time': total_train_time,
+            'training_tokens_per_sec': tokens_per_run / total_train_time,
             'final_train_loss': float(final_loss['train']),
             'final_val_loss': float(final_loss['val']),
+            'inference_time': total_inference_times
         })
 
         with open('results.csv', 'w', newline='') as f:
